@@ -1,5 +1,9 @@
 import {collapse, cageScales, rotate} from './spirit.js';
 
+// Check if we should skip the animation
+const urlParams = new URLSearchParams(window.location.search);
+const skipAnimation = urlParams.get('skip_animation') === 'true';
+
 // Make sure these functions are at the top of main.js
 // function start() {
 //   document.removeEventListener("keydown", handleEnter);
@@ -196,7 +200,7 @@ document.addEventListener("pointerup", endDraggedCage);
 
 let startPositions = [];
 let animationStartTime = null;
-const animationDuration = 700; // ms, how long the “fly to center” takes
+const animationDuration = 700; // ms, how long the "fly to center" takes
 
 // replace your click handler with this:
 function start(){
@@ -214,8 +218,8 @@ function start(){
         const vh   = window.innerHeight;
 
         return {
-            left: (rect.left  / vw) * 100,  // e.g. 37.5  means 37.5 dvw
-            top:  (rect.top   / vh) * 100,  // e.g. 42.0  means 42 dvh
+            left: (rect.left  / vw) * 100,  // e.g. 37.5  means 37.5 dvw
+            top:  (rect.top   / vh) * 100,  // e.g. 42.0  means 42 dvh
         };
     });
 
@@ -351,4 +355,64 @@ function animateToCenter(timestamp) {
             }, 500);
         }, FADE_DURATION);
     }
+}
+
+// If skipping animation, immediately show the final state
+if (skipAnimation) {
+    const startBtn = document.getElementById("start");
+    const intro = document.getElementById("intro");
+    const sections = document.getElementsByTagName('section');
+    
+    // Hide the start button
+    if (startBtn) {
+        startBtn.classList.add("transparent");
+    }
+    
+    // Remove cage backgrounds
+    cageBackgrounds.forEach(bg => bg.classList.add('transparent'));
+    
+    // Remove all cages except the main one
+    cages.forEach(cage => {
+        if (cage.id !== "cage") {
+            cage.remove();
+        }
+    });
+    
+    // Show the intro content
+    if (intro) {
+        intro.classList.remove("transparent");
+    }
+    
+    // Show all sections
+    Array.from(sections).forEach(section => {
+        section.classList.remove("hidden");
+    });
+    
+    // Set up the final cage state
+    const cage = document.getElementById("cage");
+    if (cage) {
+        cage.style.zIndex = "10";
+        cage.style.cursor = "grab";
+        
+        // Add the event listeners for the final state
+        cage.addEventListener("pointerdown", e => {
+            spin = true;
+            cage.style.cursor = "grabbing";
+            document.body.style.cursor = "grabbing";
+            prevX = e.clientX;
+            prevY = e.clientY;
+        });
+        
+        document.addEventListener("mousemove", handleMove);
+        document.addEventListener("touchmove", handleMove, { passive: false });
+        
+        document.addEventListener("pointerup", (e) => {
+            document.body.style.cursor = "auto";
+            cage.style.cursor = "grab";
+            spin = false;
+        });
+    }
+    
+    // Call collapse to ensure proper state
+    collapse();
 }

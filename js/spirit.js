@@ -14,7 +14,7 @@ const softWhiteWireframe = new THREE.LineBasicMaterial({
 });
 
 const blueMaterial = new THREE.MeshBasicMaterial({ 
-  color: 0x4080ff,
+  color: 0x50c878,
   transparent: false,
   opacity: 1.0
 });
