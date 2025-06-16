@@ -93,6 +93,68 @@ const startBtn = document.getElementById("start");
 
 let hasCollapse = false;
 
+// If skipping animation, do this block first BEFORE the setTimeout for the start button
+if (skipAnimation) {
+    hasCollapse = true; // Prevents the start button from reappearing
+
+    if (startBtn) {
+        startBtn.classList.add("transparent");
+        startBtn.style.display = 'none'; // Hide more reliably
+    }
+
+    // Immediately hide and remove animation elements to prevent FOUC
+    cages.forEach(c => {
+        if (c.id !== "cage") {
+            c.style.display = 'none';
+            c.remove();
+        }
+    });
+    cageBackgrounds.forEach(bg => {
+        bg.style.display = 'none';
+        bg.remove();
+    });
+    // Also remove any stray cageBackground elements that might be identified by class name
+    Array.from(document.getElementsByClassName("cageBackground")).forEach(bg => {
+        bg.style.display = 'none';
+        bg.remove();
+    });
+
+    const intro = document.getElementById("intro");
+    if (intro) {
+        intro.style.transition = 'none'; // Disable transition for the intro container itself
+        intro.classList.remove("transparent");
+        Array.from(intro.children).forEach(child => {
+            child.style.transition = 'none'; // Disable transition for children
+            child.style.opacity = '1';       // Make them fully visible
+        });
+    }
+
+    const sections = Array.from(document.getElementsByTagName('section'));
+    sections.forEach(section => {
+        section.classList.remove("hidden");
+        // If sections have their own fade-in, disable transitions here too
+        // section.style.transition = 'none';
+        // section.style.opacity = '1'; 
+    });
+
+    const mainCageElement = document.getElementById("cage");
+    if (mainCageElement) {
+        mainCageElement.style.zIndex = "10";
+        mainCageElement.style.cursor = "grab";
+        
+        mainCageElement.addEventListener("pointerdown", e => {
+            spin = true;
+            mainCageElement.style.cursor = "grabbing";
+            document.body.style.cursor = "grabbing";
+            prevX = e.clientX;
+            prevY = e.clientY;
+        });
+        // Global mousemove and pointerup listeners will handle the rest of interaction
+    }
+    
+    collapse(); // Sets up the Three.js scene with merged objects
+}
+
 setTimeout(() => {
     if(!hasCollapse){
         startBtn.classList.remove("transparent");
@@ -146,7 +208,7 @@ function moveDraggedCage(e){
     const pointerPctX = (e.clientX / vw) * 100;
     const pointerPctY = (e.clientY / vh) * 100;
 
-    // 5) Subtract your percent‐offset to get the element’s new %‐pos:
+    // 5) Subtract your percent‐offset to get the element's new %‐pos:
     const leftPct = pointerPctX - offsetX;
     const topPct  = pointerPctY - offsetY;
 
@@ -355,64 +417,4 @@ function animateToCenter(timestamp) {
             }, 500);
         }, FADE_DURATION);
     }
-}
-
-// If skipping animation, immediately show the final state
-if (skipAnimation) {
-    const startBtn = document.getElementById("start");
-    const intro = document.getElementById("intro");
-    const sections = document.getElementsByTagName('section');
-    
-    // Hide the start button
-    if (startBtn) {
-        startBtn.classList.add("transparent");
-    }
-    
-    // Remove cage backgrounds
-    cageBackgrounds.forEach(bg => bg.classList.add('transparent'));
-    
-    // Remove all cages except the main one
-    cages.forEach(cage => {
-        if (cage.id !== "cage") {
-            cage.remove();
-        }
-    });
-    
-    // Show the intro content
-    if (intro) {
-        intro.classList.remove("transparent");
-    }
-    
-    // Show all sections
-    Array.from(sections).forEach(section => {
-        section.classList.remove("hidden");
-    });
-    
-    // Set up the final cage state
-    const cage = document.getElementById("cage");
-    if (cage) {
-        cage.style.zIndex = "10";
-        cage.style.cursor = "grab";
-        
-        // Add the event listeners for the final state
-        cage.addEventListener("pointerdown", e => {
-            spin = true;
-            cage.style.cursor = "grabbing";
-            document.body.style.cursor = "grabbing";
-            prevX = e.clientX;
-            prevY = e.clientY;
-        });
-        
-        document.addEventListener("mousemove", handleMove);
-        document.addEventListener("touchmove", handleMove, { passive: false });
-        
-        document.addEventListener("pointerup", (e) => {
-            document.body.style.cursor = "auto";
-            cage.style.cursor = "grab";
-            spin = false;
-        });
-    }
-    
-    // Call collapse to ensure proper state
-    collapse();
 }
